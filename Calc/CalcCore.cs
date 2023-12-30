@@ -15,17 +15,18 @@ namespace Calc
                 char c = input[index];
                 switch (c)
                 {
-                    case '(': result.Add(new(LexemeType.LeftBracket, c)); index++; break;
-                    case ')': result.Add(new(LexemeType.RightBracket, c)); index++; break;
-                    case '+': result.Add(new(LexemeType.OperationAddition, c)); index++; break;
-                    case '-': result.Add(new(LexemeType.OperationSubtraction, c)); index++; break;
-                    case '*': result.Add(new(LexemeType.OperationMultiplication, c)); index++; break;
-                    case ':': case '/': result.Add(new(LexemeType.OperationDivision, c)); index++; break;
-                    case '^': result.Add(new(LexemeType.OperationPow, c)); index++; break;
-                    case '|': result.Add(new(LexemeType.AbsBracket, c)); index++; break;
+                    case '(': result.Add(index + 1, LexemeType.LeftBracket, c); index++; break;
+                    case ')': result.Add(index + 1, LexemeType.RightBracket, c); index++; break;
+                    case '+': result.Add(index + 1, LexemeType.OperationAddition, c); index++; break;
+                    case '-': result.Add(index + 1, LexemeType.OperationSubtraction, c); index++; break;
+                    case '*': result.Add(index + 1, LexemeType.OperationMultiplication, c); index++; break;
+                    case ':': case '/': result.Add(index + 1, LexemeType.OperationDivision, c); index++; break;
+                    case '^': result.Add(index + 1, LexemeType.OperationPow, c); index++; break;
+                    case '|': result.Add(index + 1, LexemeType.AbsBracket, c); index++; break;
                     default:
                         if (char.IsDigit(c))
                         {
+                            var position = index + 1;
                             StringBuilder builder = new StringBuilder();
                             do
                             {
@@ -34,10 +35,11 @@ namespace Calc
                                 if (index >= input.Length) break;
                                 c = input[index];
                             } while (char.IsDigit(c));
-                            result.Add(new(LexemeType.Number, builder.ToString()));
+                            result.Add(position, LexemeType.Number, builder.ToString());
                         }
                         else if (char.IsLetter(c))
                         {
+                            var position = index + 1;
                             StringBuilder builder = new StringBuilder();
                             do
                             {
@@ -46,7 +48,7 @@ namespace Calc
                                 if (index >= input.Length) break;
                                 c = input[index];
                             } while (char.IsLetter(c));
-                            result.Add(new(LexemeType.Function, builder.ToString()));
+                            result.Add(position, LexemeType.Function, builder.ToString());
                         }
                         else
                         {
@@ -71,7 +73,7 @@ namespace Calc
                 throw new Exception("Пустая строка");
             else
             {
-                _ = input.Back();
+                input.Back();
                 return LevelThree(input);
             }
         }
@@ -91,7 +93,7 @@ namespace Calc
                         result -= LevelTwo(input);
                         break;
                     default:
-                        _ = input.Back();
+                        input.Back();
                         return result;
                 }
             }
@@ -111,12 +113,12 @@ namespace Calc
                     case LexemeType.OperationDivision:
                         double temp = LevelOne(input);
                         if (temp != 0.0)
-                            throw new Exception("Деление на ноль");
+                            throw new Exception($"Деление на ноль ({value.Position})");
                         else
                             result /= temp;
                         break;
                     default:
-                        _ = input.Back();
+                        input.Back();
                         return result;
                 }
             }
@@ -132,7 +134,7 @@ namespace Calc
                     result = Math.Pow(result, Atom(input));
                 else
                 {
-                    _ = input.Back();
+                    input.Back();
                     return result;
                 }
             }
@@ -145,20 +147,41 @@ namespace Calc
             {
                 case LexemeType.Number:
                     return Convert.ToDouble(item.Value);
+                case LexemeType.OperationSubtraction:
+                    var next = input.Next();
+                    switch (next.Type)
+                    {
+                        case LexemeType.Number:
+                            return Convert.ToDouble(item.Value + next.Value);
+                        case LexemeType.LeftBracket:
+                            double subtractionBracketsResult = Execute(input);
+                            item = input.Next();
+                            if (item.Type != LexemeType.RightBracket)
+                                throw new Exception($"Отсутствует закрывающая скобка ({item.Position})");
+                            return -subtractionBracketsResult;
+                        case LexemeType.AbsBracket:
+                            double subtractionAbsResult = Execute(input);
+                            item = input.Next();
+                            if (item.Type != LexemeType.AbsBracket)
+                                throw new Exception($"Отсутствует закрывающая скобка ({item.Position})");
+                            return -Math.Abs(subtractionAbsResult);
+                        default:
+                            throw new Exception($"Нераспознанный символ ({item.Position}): {item.Value}");
+                    }
                 case LexemeType.LeftBracket:
                     double bracketsResult = Execute(input);
                     item = input.Next();
                     if (item.Type != LexemeType.RightBracket)
-                        throw new Exception("Отсутствует закрывающая скобка");
+                        throw new Exception($"Отсутствует закрывающая скобка ({item.Position})");
                     return bracketsResult;
                 case LexemeType.AbsBracket:
                     double absResult = Execute(input);
                     item = input.Next();
                     if (item.Type != LexemeType.AbsBracket)
-                        throw new Exception("Отсутствует закрывающая скобка");
+                        throw new Exception($"Отсутствует закрывающая скобка ({item.Position})");
                     return Math.Abs(absResult);
                 default:
-                    throw new Exception($"Нераспознанный символ : {item.Value}");
+                    throw new Exception($"Нераспознанный символ ({item.Position}): {item.Value}");
             }
         }
     }

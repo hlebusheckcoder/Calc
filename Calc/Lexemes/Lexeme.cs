@@ -17,10 +17,12 @@
 
     public record Lexeme
     {
-        public Lexeme(LexemeType type, char value) :
-            this(type, value.ToString()) { }
-        public Lexeme(LexemeType type, string? value = null) =>
-            (Type, Value) = (type, value ?? string.Empty);
+        public Lexeme(int position, LexemeType type, char value) :
+            this(position, type, value.ToString()) { }
+        public Lexeme(int position, LexemeType type, string? value = null) =>
+            (Position, Type, Value) = (position, type, value ?? string.Empty);
+
+        public int Position { get; }
 
         public LexemeType Type { get; }
 

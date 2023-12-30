@@ -13,6 +13,10 @@
 
         public bool Empty => _fullness == 0;
 
+        public void Add(int position, LexemeType type, char value) =>
+            Add(new(position, type, value));
+        public void Add(int position, LexemeType type, string? value = null) =>
+            Add(new(position, type, value));
         public void Add(Lexeme newItem)
         {
             if (_fullness == _items.Length)
@@ -23,8 +27,12 @@
 
         public Lexeme Next() => _items[_index++];
 
-        public Lexeme Back() => _items[_index--];
+        public void Back() => _index--;
 
-        public void Close() => Add(new(LexemeType.Eof));
+        public void Close()
+        {
+            var lastItem = _items[_fullness - 1];
+            Add(new(lastItem.Position + lastItem.Value.Length, LexemeType.Eof));
+        }
     }
 }
