@@ -1,5 +1,4 @@
 ﻿using Calc.Lexemes;
-using System.Globalization;
 using System.Text;
 
 namespace Calc
