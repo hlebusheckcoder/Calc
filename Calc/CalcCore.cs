@@ -1,4 +1,5 @@
 ﻿using Calc.Lexemes;
+using System.Globalization;
 using System.Text;
 
 namespace Calc
@@ -27,6 +28,7 @@ namespace Calc
                         if (char.IsDigit(c))
                         {
                             var position = index + 1;
+                            bool realNumber = false;
                             StringBuilder builder = new StringBuilder();
                             do
                             {
@@ -34,7 +36,13 @@ namespace Calc
                                 index++;
                                 if (index >= input.Length) break;
                                 c = input[index];
-                            } while (char.IsDigit(c));
+                                if (c == '.')
+                                {
+                                    if (realNumber)
+                                        throw new Exception($"Нераспознанный символ : {c}");
+                                    realNumber = true;
+                                }
+                            } while (char.IsDigit(c) || c == '.');
                             result.Add(position, LexemeType.Number, builder.ToString());
                         }
                         else if (char.IsLetter(c))
@@ -166,7 +174,7 @@ namespace Calc
                                 throw new Exception($"Отсутствует закрывающая скобка ({item.Position})");
                             return -Math.Abs(subtractionAbsResult);
                         default:
-                            throw new Exception($"Нераспознанный символ ({item.Position}): {item.Value}");
+                            throw new Exception($"Нераспознанное выражение ({item.Position}): {item.Value}");
                     }
                 case LexemeType.LeftBracket:
                     double bracketsResult = Execute(input);
@@ -181,7 +189,7 @@ namespace Calc
                         throw new Exception($"Отсутствует закрывающая скобка ({item.Position})");
                     return Math.Abs(absResult);
                 default:
-                    throw new Exception($"Нераспознанный символ ({item.Position}): {item.Value}");
+                    throw new Exception($"Нераспознанное выражение ({item.Position}): {item.Value}");
             }
         }
     }
