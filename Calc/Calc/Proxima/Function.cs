@@ -108,8 +108,9 @@ namespace Calc.Proxima
                                 else
                                 {
                                     set.Back();
+                                    set.Back();
                                     command = new ResultCommand(new CalculateCommand(set));
-                                    current = set.Current;
+                                    current = set.Next();
                                 }
 
                             }
