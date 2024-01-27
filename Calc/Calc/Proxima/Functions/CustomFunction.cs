@@ -1,25 +1,26 @@
 ﻿using Calc.Proxima.Commands;
 using Calc.Proxima.Lexemes;
 
-namespace Calc.Proxima
+namespace Calc.Proxima.Functions
 {
-    public record Function
+    public record CustomFunction : Function
     {
         private const int c_arrayStep = 10;
         private Command[] _commands = new Command[c_arrayStep];
 
-        public Function(string signature, string body)
+        public CustomFunction(string signature, string body) :
+            base(signature)
         {
-            (Signature, Name, Parameters) = ParseSignature(signature);
             Body = body;
             _commands = ParseBody(body, Parameters, new());
         }
 
-        public string Signature { get; }
-
-        public string Name { get; }
-
-        public string[] Parameters { get; }
+        internal CustomFunction(string signature, Command[] commands) :
+            base(signature)
+        {
+            Body = string.Empty;
+            _commands = commands;
+        }
 
         public string Body { get; }
 
@@ -32,7 +33,7 @@ namespace Calc.Proxima
             return context.Result.String;
         }
 
-        internal Box Execute(Box[] parameters, Context externalContext)
+        internal override Box Execute(Box[] parameters, Context externalContext)
         {
             Context context = new(externalContext);
             for (int i = 0; i < parameters.Length; i++)
@@ -40,42 +41,6 @@ namespace Calc.Proxima
             foreach (var command in _commands)
                 command.Execute(context);
             return context.Result;
-        }
-
-        private (string Signature, string Name, string[] Parameters) ParseSignature(string signature)
-        {
-            LexemeSet set = LexemeSet.Parse(signature);
-            Lexeme current = set.Current;
-
-            if (current.Type == LexemeType.Eof)
-                throw new SyntaxException("Пустая строка");
-            else if (current.Type != LexemeType.Name)
-                throw new SyntaxException("Имя функции не распознано");
-
-            string name = current.Value;
-            current = set.Next();
-            if (current.Type != LexemeType.LeftBracket)
-                throw new SyntaxException(current.Position.Number, "Ожидается открывающая скобка");
-
-            List<string> parameters = [];
-            Lexeme next;
-            do
-            {
-                current = set.Next();
-                next = set.Next() ?? current;
-                if (current.Type == LexemeType.Name && (next.Type == LexemeType.Delimiter || next.Type == LexemeType.RightBracket))
-                    parameters.Add(current.Value);
-                else
-                    set.Back();
-            } while (next.Type == LexemeType.Delimiter);
-
-            if (set.Current.Type != LexemeType.RightBracket)
-                throw new SyntaxException(set.Current.Position.Number, "Ожидается закрывающая скобка");
-
-            if (set.Next().Type != LexemeType.Eof)
-                throw new SyntaxException(set.Current.Position.Number, "Ожидается конец строки");
-
-            return (signature, name, parameters.ToArray());
         }
 
         private static Command[] ParseBody(string body, string[] parameters, Context context)
@@ -123,7 +88,7 @@ namespace Calc.Proxima
                     }
                 }
                 if (command == null)
-                    throw new SyntaxException(current.Position.Number, "Пустая команда");
+                    throw new SyntaxException(current.Position.Character, "Пустая команда");
                 commands.Add(command);
                 if (command is ResultCommand)
                     break;

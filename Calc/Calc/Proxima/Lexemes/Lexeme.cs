@@ -15,21 +15,22 @@
         OperationDivision = 10, // : или /
         OperationPow = 11, // ^
         AbsBracket = 12, // |
-        Delimiter = 13 // ,
+        Delimiter = 13, // ,
+        String = 14 // "content" или 'content'
     }
 
     internal record Lexeme
     {
-        public Lexeme(int number, LexemeType type, char value) :
-            this((0, number), type, value.ToString()) { }
-        public Lexeme(int number, LexemeType type, string? value = null) :
-            this((0, number), type, value) { }
-        public Lexeme((int Line, int Number) position, LexemeType type, char value) :
+        public Lexeme(int character, LexemeType type, char value) :
+            this((0, character), type, value.ToString()) { }
+        public Lexeme(int character, LexemeType type, string? value = null) :
+            this((0, character), type, value) { }
+        public Lexeme((int Line, int Character) position, LexemeType type, char value) :
             this(position, type, value.ToString()) { }
-        public Lexeme((int Line, int Number) position, LexemeType type, string? value = null) =>
+        public Lexeme((int Line, int Character) position, LexemeType type, string? value = null) =>
             (Position, Type, Value) = (position, type, value ?? string.Empty);
 
-        public (int Line, int Number) Position { get; }
+        public (int Line, int Character) Position { get; }
 
         public LexemeType Type { get; }
 

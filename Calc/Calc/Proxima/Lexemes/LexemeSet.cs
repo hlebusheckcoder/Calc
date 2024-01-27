@@ -19,29 +19,30 @@ namespace Calc.Proxima.Lexemes
         {
             LexemeSet result = new();
             int index = 0;
+            int line = 1;
 
             while (index < input.Length)
             {
                 char c = input[index];
                 switch (c)
                 {
-                    case '(': result.Add(index + 1, LexemeType.LeftBracket, c); index++; break;
-                    case ')': result.Add(index + 1, LexemeType.RightBracket, c); index++; break;
-                    case '=': result.Add(index + 1, LexemeType.OperationAssignment, c); index++; break;
-                    case '+': result.Add(index + 1, LexemeType.OperationAddition, c); index++; break;
-                    case '-': result.Add(index + 1, LexemeType.OperationSubtraction, c); index++; break;
-                    case '*': result.Add(index + 1, LexemeType.OperationMultiplication, c); index++; break;
-                    case ':': case '/': result.Add(index + 1, LexemeType.OperationDivision, c); index++; break;
-                    case '^': result.Add(index + 1, LexemeType.OperationPow, c); index++; break;
-                    case '|': result.Add(index + 1, LexemeType.AbsBracket, c); index++; break;
-                    case ',': result.Add(index + 1, LexemeType.Delimiter, c); index++; break;
-                    case ';': result.Add(index + 1, LexemeType.Eoc, c); index++; break;
+                    case '(': result.Add(line, index + 1, LexemeType.LeftBracket, c); index++; break;
+                    case ')': result.Add(line, index + 1, LexemeType.RightBracket, c); index++; break;
+                    case '=': result.Add(line, index + 1, LexemeType.OperationAssignment, c); index++; break;
+                    case '+': result.Add(line, index + 1, LexemeType.OperationAddition, c); index++; break;
+                    case '-': result.Add(line, index + 1, LexemeType.OperationSubtraction, c); index++; break;
+                    case '*': result.Add(line, index + 1, LexemeType.OperationMultiplication, c); index++; break;
+                    case ':': case '/': result.Add(line, index + 1, LexemeType.OperationDivision, c); index++; break;
+                    case '^': result.Add(line, index + 1, LexemeType.OperationPow, c); index++; break;
+                    case '|': result.Add(line, index + 1, LexemeType.AbsBracket, c); index++; break;
+                    case ',': result.Add(line, index + 1, LexemeType.Delimiter, c); index++; break;
+                    case ';': result.Add(line, index + 1, LexemeType.Eoc, c); index++; break;
                     default:
                         if (char.IsDigit(c))
                         {
                             var position = index + 1;
                             bool realNumber = false;
-                            StringBuilder builder = new StringBuilder();
+                            StringBuilder builder = new();
                             do
                             {
                                 builder.Append(c);
@@ -51,7 +52,7 @@ namespace Calc.Proxima.Lexemes
                                 if (c == '.')
                                 {
                                     if (realNumber)
-                                        throw new SyntaxException(index, $"Нераспознанный символ: {c}");
+                                        throw new SyntaxException(line, index + 1, $"Нераспознанный символ: {c}");
                                     realNumber = true;
                                 }
                             } while (char.IsDigit(c) || c == '.');
@@ -60,7 +61,7 @@ namespace Calc.Proxima.Lexemes
                         else if (char.IsLetter(c))
                         {
                             var position = index + 1;
-                            StringBuilder builder = new StringBuilder();
+                            StringBuilder builder = new();
                             do
                             {
                                 builder.Append(c);
@@ -70,10 +71,35 @@ namespace Calc.Proxima.Lexemes
                             } while (char.IsLetter(c) || char.IsDigit(c));
                             result.Add(position, LexemeType.Name, builder.ToString());
                         }
+                        else if (c == '\"' || c == '\'')
+                        {
+                            var closer = c;
+                            var position = index + 1;
+                            StringBuilder builder = new();
+                            index++;
+                            if (index >= input.Length)
+                                throw new SyntaxException(line, index + 1, $"Отсутствует закрывающая кавычка: {c}");
+                            c = input[index];
+                            while (c != closer)
+                            {
+                                builder.Append(c);
+                                index++;
+                                if (index >= input.Length)
+                                    throw new SyntaxException(line, index + 1, $"Отсутствует закрывающая кавычка: {c}");
+                                c = input[index];
+                            }
+                            index++;
+                            result.Add(position, LexemeType.String, builder.ToString());
+                        }
+                        else if (c == '\n')
+                        {
+                            line++;
+                            index++;
+                        }
                         else
                         {
-                            if (c != ' ' && c != '\n')
-                                throw new SyntaxException(index, $"Нераспознанный символ: {c}");
+                            if (c != ' ')
+                                throw new SyntaxException(line, index + 1, $"Нераспознанный символ: {c}");
                             index++;
                         }
                         break;
@@ -88,6 +114,10 @@ namespace Calc.Proxima.Lexemes
             Add(new(position, type, value));
         public void Add(int position, LexemeType type, string? value = null) =>
             Add(new(position, type, value));
+        public void Add(int line, int position, LexemeType type, char value) =>
+            Add(new((line, position), type, value));
+        public void Add(int line, int position, LexemeType type, string? value = null) =>
+            Add(new((line, position), type, value));
         public void Add(Lexeme newItem)
         {
             if (_fullness == _items.Length)

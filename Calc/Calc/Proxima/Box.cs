@@ -20,6 +20,7 @@
 
         public readonly double Double => _double ?? Convert.ToDouble(_string);
         public readonly string String => _string ?? _double?.ToString() ?? throw new Exception();
+        public readonly int Int => Convert.ToInt32(Double);
 
         public bool IsDouble
         {
@@ -32,7 +33,6 @@
                 if (result)
                 {
                     _double = value;
-                    _string = null;
                     Type = BoxType.Double;
                 }
                 return result;
