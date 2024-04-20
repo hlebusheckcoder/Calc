@@ -1,6 +1,6 @@
 {
-  "name": "Calc.Blazor",
-  "short_name": "Calc.Blazor",
+  "name": "Калькулятор",
+  "short_name": "Калькулятор",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
